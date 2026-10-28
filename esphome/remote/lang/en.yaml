@@ -1,0 +1,45 @@
+# =====================================================================
+# ENGLISH on-screen texts
+# Include ONE language file in the main config. To add a language, copy this
+# file, translate the values and include your copy instead.
+# Note: the bold fonts only contain basic Latin characters, so avoid accented
+# letters (use an apostrophe instead, e.g. Luminosita').
+# =====================================================================
+
+substitutions:
+  # Page titles
+  txt_title_lights: "Lights"
+  txt_title_led: "LED"
+  txt_title_tv: "TV"
+  txt_title_appliances: "Appliances"
+  txt_title_power: "Power"
+  txt_title_settings: "Settings"
+
+  # Lights page
+  txt_light_on: "On"
+  txt_light_off: "Off"
+  txt_all_on: "All on"
+  txt_all_off: "All off"
+
+  # LED page (the zone name comes first, e.g. "Ceiling: on")
+  txt_led_on: ": on"
+  txt_led_off: ": off"
+  txt_colour: "Colour"
+  txt_brightness: "Brightness"
+
+  # TV page (the TV name comes first, e.g. "Apple TV on")
+  txt_tv_on: " on"
+  txt_tv_off: " off"
+
+  # Appliances page
+  txt_idle: "Idle"
+
+  # Power page
+  txt_power_subtitle: "instant, whole home"
+  txt_power_waiting: "waiting for Home Assistant"
+  txt_power_of: "of"
+
+  # Settings page
+  txt_screen_brightness: "Screen brightness"
+  txt_stay_awake: "Stay awake"
+  txt_stay_awake_note: "Pauses deep sleep: needed for OTA updates. Turns off by itself on restart."

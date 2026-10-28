@@ -1,0 +1,102 @@
+# =====================================================================
+# APPLIANCES PAGE - list of appliances with remaining time
+# Add cards with appliances/appliance.yaml (as many as you like: with more
+# than 3 the list scrolls).
+#
+# Optional variables:
+#   title     page title                       (default: from the language file)
+#   nav_icon  icon in the bottom bar (MDI)     (default: washing machine)
+# =====================================================================
+
+defaults:
+  title: ${txt_title_appliances}
+  nav_icon: "\U000F072A"
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_nav_appliances
+    size: 22
+    bpp: 4
+    glyphs: ["${nav_icon}"]
+  # Pause / resume icons for the card buttons
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_appliance_pause
+    size: 22
+    bpp: 4
+    glyphs: ["\U000F03E4", "\U000F040A"]
+
+script:
+  # Cards append their own refresh here
+  - id: appliances_refresh
+    then:
+      - logger.log: {level: VERBOSE, format: "Refreshing appliances"}
+  - id: !extend build_ui
+    then:
+      - lambda: |-
+          lv_obj_set_parent(id(nav_appliances), id(nav_bar));
+          lv_obj_set_flex_grow(id(nav_appliances), 1);
+  - id: !extend refresh_all
+    then:
+      - script.execute: appliances_refresh
+  - id: !extend nav_refresh
+    then:
+      - lvgl.widget.update:
+          id: nav_appliances
+          state:
+            checked: !lambda 'return id(active_page) == "appliances";'
+
+lvgl:
+  top_layer:
+    widgets:
+      - button:
+          id: nav_appliances
+          height: 46
+          styles: st_nav
+          pressed:
+            bg_color: 0x0E1116
+          checkable: true
+          checked:
+            bg_color: 0x0E1116
+            text_color: 0xE9B04A
+            border_color: 0xE9B04A
+            border_width: 2
+            border_side: TOP
+          on_click:
+            - lvgl.page.show: page_appliances
+          widgets:
+            - label:
+                text: "${nav_icon}"
+                text_font: mdi_nav_appliances
+                align: CENTER
+
+  pages:
+    - id: page_appliances
+      bg_color: 0x0E1116
+      on_load:
+        - lambda: 'id(active_page) = "appliances";'
+        - script.execute: nav_refresh
+        - script.execute: appliances_refresh
+      widgets:
+        - label:
+            text: "${title}"
+            text_font: mont_b20
+            x: 10
+            y: 6
+        # List: cards are inserted here on boot
+        - obj:
+            id: appliances_list
+            x: 8
+            y: 38
+            width: 224
+            height: 232
+            styles: st_container
+            scrollbar_mode: AUTO
+            layout:
+              type: flex
+              flex_flow: COLUMN
+              pad_row: 6
+            widgets: []   # filled on boot

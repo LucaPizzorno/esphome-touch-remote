@@ -1,0 +1,154 @@
+# =====================================================================
+# SETTINGS - opened from the gear at the top (no button in the bottom bar)
+# Screen brightness (saved, kept after deep sleep) and "Stay awake" for
+# OTA updates.
+# Optional but recommended. Put it LAST among the packages.
+# =====================================================================
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_gear
+    size: 22
+    bpp: 4
+    glyphs: ["\U000F0493"]
+
+script:
+  # The gear hides itself when you are already in Settings
+  - id: !extend nav_refresh
+    then:
+      - if:
+          condition:
+            lambda: 'return id(active_page) == "settings";'
+          then:
+            - lvgl.widget.hide: btn_gear
+          else:
+            - lvgl.widget.show: btn_gear
+  - id: !extend refresh_batt
+    then:
+      - lvgl.widget.update:
+          id: sw_awake
+          state:
+            checked: !lambda 'return id(keep_awake);'
+
+lvgl:
+  top_layer:
+    widgets:
+      - button:
+          id: btn_gear
+          align: TOP_RIGHT
+          x: -104
+          y: 4
+          width: 34
+          height: 34
+          bg_opa: TRANSP
+          border_width: 0
+          shadow_width: 0
+          pressed:
+            bg_opa: TRANSP
+            text_color: 0xE9B04A
+          on_click:
+            - lvgl.page.show: page_set
+          widgets:
+            - label:
+                text: "\U000F0493"   # gear
+                text_font: mdi_gear
+                text_color: 0x7F8B97
+                align: CENTER
+
+  pages:
+    - id: page_set
+      bg_color: 0x0E1116
+      on_load:
+        - lambda: 'id(active_page) = "settings";'
+        - script.execute: nav_refresh
+        - lvgl.slider.update:
+            id: sl_bright
+            value: !lambda 'return id(backlight).current_values.get_brightness() * 100.0f;'
+        - lvgl.label.update:
+            id: lbl_bright_val
+            text: !lambda |-
+              char buf[8];
+              snprintf(buf, sizeof(buf), "%.0f%%", id(backlight).current_values.get_brightness() * 100.0f);
+              return std::string(buf);
+        - lvgl.widget.update:
+            id: sw_awake
+            state:
+              checked: !lambda 'return id(keep_awake);'
+      widgets:
+        - label:
+            text: "${txt_title_settings}"
+            text_font: mont_b20
+            x: 10
+            y: 6
+        - label:
+            text: "${txt_screen_brightness}"
+            text_font: montserrat_14
+            x: 12
+            y: 52
+        - label:
+            id: lbl_bright_val
+            text: "--"
+            text_font: montserrat_14
+            text_color: 0xE9B04A
+            align: TOP_RIGHT
+            x: -12
+            y: 52
+        - slider:
+            id: sl_bright
+            x: 20
+            y: 92
+            width: 200
+            height: 14
+            min_value: 5
+            max_value: 100
+            value: 100
+            ext_click_area: 14
+            bg_color: 0x26303B
+            indicator:
+              bg_color: 0xE9B04A
+            knob:
+              bg_color: 0xE9B04A
+              pad_all: 6
+            on_value:
+              - light.turn_on:
+                  id: backlight
+                  brightness: !lambda 'return x / 100.0f;'
+                  transition_length: 0s
+              - lvgl.label.update:
+                  id: lbl_bright_val
+                  text: !lambda |-
+                    char buf[8];
+                    snprintf(buf, sizeof(buf), "%.0f%%", (float) x);
+                    return std::string(buf);
+        - label:
+            text: "${txt_stay_awake}"
+            text_font: montserrat_14
+            x: 12
+            y: 150
+        - switch:
+            id: sw_awake
+            align: TOP_RIGHT
+            x: -12
+            y: 144
+            width: 50
+            height: 26
+            bg_color: 0x26303B
+            indicator:
+              bg_color: 0x26303B
+              checked:
+                bg_color: 0xE9B04A
+            knob:
+              bg_color: 0xE7EBF0
+            on_value:
+              - lambda: 'id(keep_awake) = x;'
+              - script.execute: refresh_batt
+        - label:
+            text: "${txt_stay_awake_note}"
+            text_font: montserrat_14
+            text_color: 0x7F8B97
+            long_mode: WRAP
+            width: 216
+            x: 12
+            y: 184

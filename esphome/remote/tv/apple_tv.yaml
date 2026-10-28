@@ -1,0 +1,315 @@
+# =====================================================================
+# TV PAGE - remote for Apple TV (Home Assistant "Apple TV" integration)
+# Power, arrows, OK, volume, play/pause, Menu, Home.
+#
+# Required variables:
+#   remote    the Apple TV remote entity        (e.g. remote.living_room)
+#   player    the Apple TV media_player entity  (e.g. media_player.living_room)
+# Optional:
+#   name      name shown on the power button    (default: Apple TV)
+#   title     page title                        (default: from the language file)
+#   nav_icon  icon in the bottom bar (MDI)      (default: television)
+# =====================================================================
+
+defaults:
+  name: Apple TV
+  title: ${txt_title_tv}
+  nav_icon: "\U000F0502"
+
+binary_sensor:
+  - platform: homeassistant
+    id: bs_tv
+    entity_id: ${remote}
+    internal: true
+    on_state:
+      then:
+        - lvgl.widget.update:
+            id: btn_tv_power
+            state:
+              checked: !lambda 'return x;'
+        - lvgl.label.update:
+            id: lbl_tv_power
+            text: !lambda 'return std::string(x ? "${name}${txt_tv_on}" : "${name}${txt_tv_off}");'
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_nav_tv
+    size: 22
+    bpp: 4
+    glyphs: ["${nav_icon}"]
+
+script:
+  - id: !extend build_ui
+    then:
+      - lambda: |-
+          lv_obj_set_parent(id(nav_tv), id(nav_bar));
+          lv_obj_set_flex_grow(id(nav_tv), 1);
+  - id: !extend refresh_all
+    then:
+      - if:
+          condition:
+            lambda: 'return id(bs_tv).has_state();'
+          then:
+            - lvgl.widget.update:
+                id: btn_tv_power
+                state:
+                  checked: !lambda 'return id(bs_tv).state;'
+            - lvgl.label.update:
+                id: lbl_tv_power
+                text: !lambda 'return std::string(id(bs_tv).state ? "${name}${txt_tv_on}" : "${name}${txt_tv_off}");'
+  - id: !extend nav_refresh
+    then:
+      - lvgl.widget.update:
+          id: nav_tv
+          state:
+            checked: !lambda 'return id(active_page) == "tv";'
+
+lvgl:
+  top_layer:
+    widgets:
+      - button:
+          id: nav_tv
+          height: 46
+          styles: st_nav
+          pressed:
+            bg_color: 0x0E1116
+          checkable: true
+          checked:
+            bg_color: 0x0E1116
+            text_color: 0xE9B04A
+            border_color: 0xE9B04A
+            border_width: 2
+            border_side: TOP
+          on_click:
+            - lvgl.page.show: page_tv
+          widgets:
+            - label:
+                text: "${nav_icon}"
+                text_font: mdi_nav_tv
+                align: CENTER
+
+  pages:
+    - id: page_tv
+      bg_color: 0x0E1116
+      on_load:
+        - lambda: 'id(active_page) = "tv";'
+        - script.execute: nav_refresh
+      widgets:
+        - label:
+            text: "${title}"
+            text_font: mont_b20
+            x: 10
+            y: 6
+        - button:
+            id: btn_tv_power
+            x: 8
+            y: 36
+            width: 224
+            height: 38
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            checked:
+              bg_color: 0x16302A
+              border_color: 0x43B88C
+            on_click:
+              - homeassistant.action:
+                  action: media_player.toggle
+                  data:
+                    entity_id: ${player}
+            widgets:
+              - label:
+                  id: lbl_tv_power
+                  text: "${name}"
+                  align: CENTER
+        - button:
+            id: k_up
+            x: 58
+            y: 82
+            width: 46
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: up
+            widgets:
+              - label:
+                  text: "\uF077"
+                  align: CENTER
+        - button:
+            id: k_left
+            x: 8
+            y: 132
+            width: 46
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: left
+            widgets:
+              - label:
+                  text: "\uF053"
+                  align: CENTER
+        - button:
+            id: k_ok
+            x: 58
+            y: 132
+            width: 46
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: select
+            widgets:
+              - label:
+                  text: "OK"
+                  align: CENTER
+        - button:
+            id: k_right
+            x: 108
+            y: 132
+            width: 46
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: right
+            widgets:
+              - label:
+                  text: "\uF054"
+                  align: CENTER
+        - button:
+            id: k_down
+            x: 58
+            y: 182
+            width: 46
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: down
+            widgets:
+              - label:
+                  text: "\uF078"
+                  align: CENTER
+        - button:
+            id: k_volup
+            x: 164
+            y: 82
+            width: 68
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: volume_up
+            widgets:
+              - label:
+                  text: "Vol +"
+                  align: CENTER
+        - button:
+            id: k_voldn
+            x: 164
+            y: 132
+            width: 68
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: volume_down
+            widgets:
+              - label:
+                  text: "Vol -"
+                  align: CENTER
+        - button:
+            id: k_playpause
+            x: 164
+            y: 182
+            width: 68
+            height: 46
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: media_player.media_play_pause
+                  data:
+                    entity_id: ${player}
+            widgets:
+              - label:
+                  text: "\uF04B\uF04C"
+                  align: CENTER
+        - button:
+            id: k_menu
+            x: 8
+            y: 236
+            width: 108
+            height: 34
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: menu
+            widgets:
+              - label:
+                  text: "Menu"
+                  align: CENTER
+        - button:
+            id: k_home
+            x: 124
+            y: 236
+            width: 108
+            height: 34
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: remote.send_command
+                  data:
+                    entity_id: ${remote}
+                    command: home
+            widgets:
+              - label:
+                  text: "Home"
+                  align: CENTER

@@ -1,0 +1,42 @@
+# =====================================================================
+# ITALIAN on-screen texts (testi in italiano)
+# Include ONE language file in the main config.
+# =====================================================================
+
+substitutions:
+  # Page titles
+  txt_title_lights: "Luci"
+  txt_title_led: "LED"
+  txt_title_tv: "TV"
+  txt_title_appliances: "Casa"
+  txt_title_power: "Watt"
+  txt_title_settings: "Impostazioni"
+
+  # Lights page
+  txt_light_on: "Accesa"
+  txt_light_off: "Spenta"
+  txt_all_on: "Accendi tutte"
+  txt_all_off: "Spegni tutte"
+
+  # LED page
+  txt_led_on: ": acceso"
+  txt_led_off: ": spento"
+  txt_colour: "Colore"
+  txt_brightness: "Luminosita'"
+
+  # TV page
+  txt_tv_on: " accesa"
+  txt_tv_off: " spenta"
+
+  # Appliances page
+  txt_idle: "Ferma"
+
+  # Power page
+  txt_power_subtitle: "istantaneo, totale casa"
+  txt_power_waiting: "in attesa di Home Assistant"
+  txt_power_of: "di"
+
+  # Settings page
+  txt_screen_brightness: "Luminosita' schermo"
+  txt_stay_awake: "Resta sveglio"
+  txt_stay_awake_note: "Sospende il deep sleep: serve per gli aggiornamenti OTA. Si disattiva da solo al riavvio."

@@ -1,0 +1,262 @@
+# =====================================================================
+# LED PAGE - zones with on/off, 6 quick colours and brightness
+# Add zones with led/zone.yaml (2 to 4 recommended: the zone buttons share
+# the screen width).
+#
+# Optional variables:
+#   title     page title                       (default: from the language file)
+#   nav_icon  icon in the bottom bar (MDI)     (default: LED strip)
+# =====================================================================
+
+defaults:
+  title: ${txt_title_led}
+  nav_icon: "\U000F1051"
+
+globals:
+  - id: led_zone_sel          # selected zone (empty = the first one)
+    type: std::string
+    initial_value: '""'
+  - id: led_entity            # entities of the selected zone
+    type: std::string
+    initial_value: '""'
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_nav_led
+    size: 22
+    bpp: 4
+    glyphs: ["${nav_icon}"]
+
+script:
+  # Zones append their own actions here (selection, state, brightness)
+  - id: led_refresh
+    mode: restart
+    then:
+      - logger.log: {level: VERBOSE, format: "Refreshing LED"}
+  - id: !extend build_ui
+    then:
+      - lambda: |-
+          lv_obj_set_parent(id(nav_led), id(nav_bar));
+          lv_obj_set_flex_grow(id(nav_led), 1);
+  - id: !extend refresh_all
+    then:
+      - script.execute: led_refresh
+  - id: !extend nav_refresh
+    then:
+      - lvgl.widget.update:
+          id: nav_led
+          state:
+            checked: !lambda 'return id(active_page) == "led";'
+
+lvgl:
+  top_layer:
+    widgets:
+      - button:
+          id: nav_led
+          height: 46
+          styles: st_nav
+          pressed:
+            bg_color: 0x0E1116
+          checkable: true
+          checked:
+            bg_color: 0x0E1116
+            text_color: 0xE9B04A
+            border_color: 0xE9B04A
+            border_width: 2
+            border_side: TOP
+          on_click:
+            - lvgl.page.show: page_led
+          widgets:
+            - label:
+                text: "${nav_icon}"
+                text_font: mdi_nav_led
+                align: CENTER
+
+  pages:
+    - id: page_led
+      bg_color: 0x0E1116
+      on_load:
+        - lambda: 'id(active_page) = "led";'
+        - script.execute: nav_refresh
+        - script.execute: led_refresh
+      widgets:
+        - label:
+            text: "${title}"
+            text_font: mont_b20
+            x: 10
+            y: 6
+        # Zone row: zone buttons are inserted here on boot
+        - obj:
+            id: led_zone_row
+            x: 8
+            y: 36
+            width: 224
+            height: 38
+            styles: st_container
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: ROW
+              pad_column: 4
+            widgets: []   # filled on boot
+        - button:
+            id: btn_led_power
+            x: 8
+            y: 82
+            width: 224
+            height: 44
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            checked:
+              bg_color: 0x2A2112
+              border_color: 0xE9B04A
+            on_click:
+              - homeassistant.action:
+                  action: light.toggle
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+            widgets:
+              - label:
+                  id: lbl_led_power
+                  text: "..."
+                  align: CENTER
+        - label:
+            text: "${txt_colour}"
+            text_color: 0x7F8B97
+            x: 10
+            y: 134
+        - button:
+            id: col_caldo
+            x: 8
+            y: 152
+            width: 32
+            height: 34
+            bg_color: 0xFFB347
+            bg_opa: COVER
+            radius: 8
+            border_width: 0
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+                  data_template:
+                    rgb_color: "[255, 179, 71]"
+        - button:
+            id: col_neutro
+            x: 46
+            y: 152
+            width: 32
+            height: 34
+            bg_color: 0xFFF2CF
+            bg_opa: COVER
+            radius: 8
+            border_width: 0
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+                  data_template:
+                    rgb_color: "[255, 242, 207]"
+        - button:
+            id: col_rosso
+            x: 84
+            y: 152
+            width: 32
+            height: 34
+            bg_color: 0xFF0000
+            bg_opa: COVER
+            radius: 8
+            border_width: 0
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+                  data_template:
+                    rgb_color: "[255, 0, 0]"
+        - button:
+            id: col_verde
+            x: 122
+            y: 152
+            width: 32
+            height: 34
+            bg_color: 0x00FF00
+            bg_opa: COVER
+            radius: 8
+            border_width: 0
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+                  data_template:
+                    rgb_color: "[0, 255, 0]"
+        - button:
+            id: col_blu
+            x: 160
+            y: 152
+            width: 32
+            height: 34
+            bg_color: 0x0000FF
+            bg_opa: COVER
+            radius: 8
+            border_width: 0
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+                  data_template:
+                    rgb_color: "[0, 0, 255]"
+        - button:
+            id: col_viola
+            x: 198
+            y: 152
+            width: 32
+            height: 34
+            bg_color: 0xA000FF
+            bg_opa: COVER
+            radius: 8
+            border_width: 0
+            shadow_width: 0
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+                  data_template:
+                    rgb_color: "[160, 0, 255]"
+        - label:
+            text: "${txt_brightness}"
+            text_color: 0x7F8B97
+            x: 10
+            y: 198
+        - slider:
+            id: sl_led
+            x: 14
+            y: 226
+            width: 212
+            height: 18
+            min_value: 1
+            max_value: 100
+            value: 50
+            indicator:
+              bg_color: 0xE9B04A
+            knob:
+              bg_color: 0xE9B04A
+            on_release:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(led_entity);'
+                    brightness_pct: !lambda 'return to_string((int) x);'

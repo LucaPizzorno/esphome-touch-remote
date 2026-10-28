@@ -1,0 +1,97 @@
+# =====================================================================
+# ONE LIGHT TILE (on/off) for the Lights page - requires lights/page.yaml
+# Include it once per light. The tile follows the state in HA
+# (even when you switch the light from the wall switch).
+#
+# Required variables:
+#   key      short unique name: lowercase letters, digits, _   (e.g. kitchen)
+#   name     text on the tile                                  (e.g. Kitchen)
+#   entity   entity to control                                 (e.g. light.kitchen)
+# Optional:
+#   icon     MDI icon, e.g. "\U000F0335" (see README)          (default: light bulb)
+# =====================================================================
+
+defaults:
+  icon: "\U000F0335"
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_light_${key}
+    size: 28
+    bpp: 4
+    glyphs: ["${icon}"]
+
+binary_sensor:
+  - platform: homeassistant
+    id: bs_light_${key}
+    entity_id: ${entity}
+    internal: true
+    on_state:
+      then:
+        - lvgl.widget.update:
+            id: tile_${key}
+            state:
+              checked: !lambda 'return x;'
+        - lvgl.label.update:
+            id: st_light_${key}
+            text: !lambda 'return std::string(x ? "${txt_light_on}" : "${txt_light_off}");'
+
+script:
+  - id: !extend build_ui
+    then:
+      - lambda: |-
+          lv_obj_set_parent(id(tile_${key}), id(lights_grid));
+          if (!id(lights_all).empty()) id(lights_all) += ",";
+          id(lights_all) += "${entity}";
+  - id: !extend refresh_all
+    then:
+      - if:
+          condition:
+            lambda: 'return id(bs_light_${key}).has_state();'
+          then:
+            - lvgl.widget.update:
+                id: tile_${key}
+                state:
+                  checked: !lambda 'return id(bs_light_${key}).state;'
+            - lvgl.label.update:
+                id: st_light_${key}
+                text: !lambda 'return std::string(id(bs_light_${key}).state ? "${txt_light_on}" : "${txt_light_off}");'
+
+lvgl:
+  pages:
+    - id: !extend page_lights
+      widgets:
+        - button:
+            id: tile_${key}
+            width: 108
+            height: 92
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            checkable: true
+            checked:
+              bg_color: 0x2A2112
+              border_color: 0xE9B04A
+              text_color: 0xE9B04A
+            on_click:
+              - homeassistant.action:
+                  action: light.toggle
+                  data:
+                    entity_id: ${entity}
+            widgets:
+              - label:
+                  text: "${icon}"
+                  text_font: mdi_light_${key}
+                  align: TOP_LEFT
+              - label:
+                  text: "${name}"
+                  text_font: mont_b14
+                  align: BOTTOM_LEFT
+                  y: -18
+              - label:
+                  id: st_light_${key}
+                  text: "..."
+                  text_font: montserrat_14
+                  align: BOTTOM_LEFT

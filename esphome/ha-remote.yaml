@@ -1,0 +1,133 @@
+# =====================================================================
+# HA TOUCH REMOTE - main config file
+# Board: Freenove ESP32-S3 Display 2.8" (FNK0104)
+#
+# This is the only file you need to edit: choose WHICH PAGES you want and
+# WHICH ENTITIES go on each one.
+# - To remove a page: comment out (#) or delete its line and its entities.
+# - To add a light, LED zone or appliance: copy a block, give it a unique
+#   package name (e.g. light_bathroom) and change the variables.
+# - The order of the packages is the order of the buttons in the bottom bar;
+#   the first page is the one shown at power-on.
+# The variables of each building block are described at the top of its file
+# in remote/.
+#
+# Credentials go in secrets.yaml (see secrets.yaml.example).
+# The entities below are the author's own: replace them with yours.
+# =====================================================================
+
+substitutions:
+  device_name: ha-remote          # hostname: lowercase letters, digits, -
+  friendly_name: HA Remote
+
+packages:
+  # ---------------- ON-SCREEN LANGUAGE (pick one) ----------------
+  language: !include remote/lang/en.yaml
+  # language: !include remote/lang/it.yaml
+
+  # ---------------- CORE (always required, keep it first) ----------------
+  core: !include remote/core.yaml
+
+  # ---------------- LIGHTS PAGE ----------------
+  lights: !include remote/lights/page.yaml
+  light_chandelier: !include
+    file: remote/lights/light.yaml
+    vars:
+      key: chandelier
+      name: Chandelier
+      entity: light.switch_7_lightbulb
+      icon: "\U000F0769"
+  light_kitchen: !include
+    file: remote/lights/light.yaml
+    vars:
+      key: kitchen
+      name: Kitchen
+      entity: light.switch_1_lightbulb
+      icon: "\U000F0A70"
+  light_sofa: !include
+    file: remote/lights/light.yaml
+    vars:
+      key: sofa
+      name: Sofa
+      entity: light.switch_3_lightbulb
+      icon: "\U000F04B9"
+  light_terrace: !include
+    file: remote/lights/light.yaml
+    vars:
+      key: terrace
+      name: Terrace
+      entity: light.switch_5_lightbulb
+      icon: "\U000F1817"
+
+  # ---------------- LED PAGE ----------------
+  led: !include remote/led/page.yaml
+  led_ceiling: !include
+    file: remote/led/zone.yaml
+    vars:
+      key: ceiling
+      name: Ceiling
+      entity: light.led_soggiorno_1
+      extra_entities: light.h608a   # second strip, controlled together
+  led_lamp: !include
+    file: remote/led/zone.yaml
+    vars:
+      key: lamp
+      name: Lamp
+      entity: light.h6072
+  led_stairs: !include
+    file: remote/led/zone.yaml
+    vars:
+      key: stairs
+      name: Stairs
+      entity: light.h61a0
+
+  # ---------------- TV PAGE (Apple TV) ----------------
+  tv: !include
+    file: remote/tv/apple_tv.yaml
+    vars:
+      remote: remote.apple_tv_soggiorno
+      player: media_player.apple_tv_soggiorno
+
+  # ---------------- APPLIANCES PAGE ----------------
+  appliances: !include remote/appliances/page.yaml
+  appliance_washer: !include
+    file: remote/appliances/appliance.yaml
+    vars:
+      key: washer
+      name: Washer
+      icon: "\U000F072A"
+      state: sensor.lavanderia_lavatrice2_stato_macchina
+      minutes: sensor.minuti_rimanenti_lavatrice
+      resume_button: button.lavanderia_lavatrice2_avvio
+      pause_button: button.lavanderia_lavatrice2_pausa
+  appliance_dryer: !include
+    file: remote/appliances/appliance.yaml
+    vars:
+      key: dryer
+      name: Dryer
+      icon: "\U000F0917"
+      state: sensor.lavanderia_asciugatrice2_stato_macchina
+      minutes: sensor.minuti_rimanenti_asciugatrice
+      resume_button: button.lavanderia_asciugatrice2_avvio
+      pause_button: button.lavanderia_asciugatrice2_pausa
+  appliance_dishwasher: !include
+    file: remote/appliances/appliance.yaml
+    vars:
+      key: dishwasher
+      name: Dishwasher
+      icon: "\U000F0AAC"
+      state: sensor.lavastoviglie_stato_di_funzionamento
+      minutes: sensor.minuti_rimanenti_lavastoviglie
+      active_states: "run,pause"
+      state_labels: "ready=Ready,inactive=Ready,finished=Done,delayedstart=Delayed start,actionrequired=Needs attention,error=Error"
+
+  # ---------------- POWER PAGE ----------------
+  power: !include
+    file: remote/power/page.yaml
+    vars:
+      power_sensor: sensor.consumo_istantaneo
+      max_power_w: "3500"
+      max_power_label: "3.5 kW"
+
+  # ---------------- SETTINGS (gear at the top; keep it last) ----------------
+  settings: !include remote/settings.yaml

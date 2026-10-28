@@ -1,0 +1,90 @@
+# =====================================================================
+# ONE LED ZONE for the LED page - requires led/page.yaml
+# Include it once per zone (dimmable / colour light).
+#
+# Required variables:
+#   key      short unique name: lowercase letters, digits, _   (e.g. ceiling)
+#   name     text on the zone button (keep it short!)          (e.g. Ceiling)
+#   entity   main entity: state and brightness are read from it
+# Optional:
+#   extra_entities  more entities controlled together with the main one,
+#                   comma separated (e.g. two identical strips)   (default: none)
+# =====================================================================
+
+defaults:
+  extra_entities: ""
+
+binary_sensor:
+  - platform: homeassistant
+    id: bs_led_${key}
+    entity_id: ${entity}
+    internal: true
+    on_state:
+      then:
+        - script.execute: led_refresh
+
+sensor:
+  - platform: homeassistant
+    id: sn_led_${key}
+    entity_id: ${entity}
+    attribute: brightness
+    internal: true
+    on_value:
+      then:
+        - script.execute: led_refresh
+
+script:
+  - id: !extend build_ui
+    then:
+      - lambda: |-
+          lv_obj_set_parent(id(led_zone_${key}), id(led_zone_row));
+          lv_obj_set_flex_grow(id(led_zone_${key}), 1);
+  - id: !extend led_refresh
+    then:
+      # The first zone added is the one selected on boot
+      - lambda: 'if (id(led_zone_sel).empty()) id(led_zone_sel) = "${key}";'
+      - lvgl.widget.update:
+          id: led_zone_${key}
+          state:
+            checked: !lambda 'return id(led_zone_sel) == "${key}";'
+      - if:
+          condition:
+            lambda: 'return id(led_zone_sel) == "${key}";'
+          then:
+            - lambda: |-
+                std::string extra = "${extra_entities}";
+                id(led_entity) = std::string("${entity}") + (extra.empty() ? std::string("") : "," + extra);
+            - lvgl.label.update:
+                id: lbl_led_power
+                text: !lambda 'return std::string("${name}") + (id(bs_led_${key}).state ? "${txt_led_on}" : "${txt_led_off}");'
+            - lvgl.widget.update:
+                id: btn_led_power
+                state:
+                  checked: !lambda 'return id(bs_led_${key}).state;'
+            - lvgl.slider.update:
+                id: sl_led
+                value: !lambda |-
+                  float b = id(sn_led_${key}).state;
+                  if (std::isnan(b)) return 50;
+                  return (int) (b * 100.0f / 255.0f + 0.5f);
+
+lvgl:
+  pages:
+    - id: !extend page_led
+      widgets:
+        - button:
+            id: led_zone_${key}
+            height: 38
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            checked:
+              bg_color: 0x1D2E45
+              border_color: 0x6B9BE0
+            on_click:
+              - lambda: 'id(led_zone_sel) = "${key}";'
+              - script.execute: led_refresh
+            widgets:
+              - label:
+                  text: "${name}"
+                  align: CENTER

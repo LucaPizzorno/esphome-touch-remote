@@ -1,0 +1,199 @@
+# =====================================================================
+# ONE APPLIANCE CARD for the Appliances page - requires appliances/page.yaml
+# Shows the remaining time while running and, if you set the buttons, a
+# pause/resume button. Include it once per appliance.
+#
+# Required variables:
+#   key       short unique name: lowercase letters, digits, _   (e.g. washer)
+#   name      text on the card                                  (e.g. Washer)
+#   state     sensor with the machine state (text)
+#   minutes   sensor with the remaining minutes
+# Optional:
+#   icon           MDI icon                                  (default: washing machine)
+#   resume_button  button entity to resume                   (default: none)
+#   pause_button   button entity to pause                    (default: none)
+#                  (without buttons the card is information only)
+#   idle_state     state value when stopped                  (default: idle)
+#   pause_state    state value when paused                   (default: pause)
+#   active_states  if your integration has many "stopped" states, list the
+#                  ones in which it is running instead, comma separated (e.g. run,pause)
+#   state_labels   texts for the stopped states, e.g. "ready=Ready,finished=Done"
+#   idle_text      text when stopped                         (default: from the language file)
+# =====================================================================
+
+defaults:
+  icon: "\U000F072A"
+  resume_button: ""
+  pause_button: ""
+  idle_state: idle
+  pause_state: pause
+  active_states: ""
+  state_labels: ""
+  idle_text: ${txt_idle}
+
+globals:
+  - id: appliance_active_${key}
+    type: bool
+    initial_value: 'false'
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_appliance_${key}
+    size: 28
+    bpp: 4
+    glyphs: ["${icon}"]
+
+text_sensor:
+  - platform: homeassistant
+    id: ts_appliance_${key}
+    entity_id: ${state}
+    internal: true
+    on_value:
+      then:
+        - script.execute: appliance_${key}
+
+sensor:
+  - platform: homeassistant
+    id: sn_appliance_${key}
+    entity_id: ${minutes}
+    internal: true
+    on_value:
+      then:
+        - script.execute: appliance_${key}
+
+script:
+  - id: !extend build_ui
+    then:
+      - lambda: 'lv_obj_set_parent(id(appliance_card_${key}), id(appliances_list));'
+  - id: !extend appliances_refresh
+    then:
+      - script.execute: appliance_${key}
+
+  - id: appliance_${key}
+    mode: restart
+    then:
+      # Is it running?
+      - lambda: |-
+          if (!id(ts_appliance_${key}).has_state()) { id(appliance_active_${key}) = false; return; }
+          const std::string s = id(ts_appliance_${key}).state;
+          const std::string active = "${active_states}";
+          if (!active.empty()) {
+            id(appliance_active_${key}) = ("," + active + ",").find("," + s + ",") != std::string::npos;
+          } else {
+            const std::string labels = "," + std::string("${state_labels}");
+            id(appliance_active_${key}) = (s != "${idle_state}") && labels.find("," + s + "=") == std::string::npos;
+          }
+      - lvgl.label.update:
+          id: lbl_appliance_${key}
+          text: !lambda |-
+            if (!id(ts_appliance_${key}).has_state()) return std::string("--");
+            const std::string s = id(ts_appliance_${key}).state;
+            if (!id(appliance_active_${key})) {
+              const std::string labels = "," + std::string("${state_labels}") + ",";
+              size_t p = labels.find("," + s + "=");
+              if (p != std::string::npos) {
+                p += s.size() + 2;
+                return labels.substr(p, labels.find(",", p) - p);
+              }
+              return std::string("${idle_text}");
+            }
+            float m = id(sn_appliance_${key}).state;
+            if (std::isnan(m)) return std::string("--");
+            int mi = (int) m;
+            char b[24];
+            if (mi >= 60) snprintf(b, sizeof(b), "%d h %02d", mi / 60, mi % 60);
+            else snprintf(b, sizeof(b), "%d min", mi);
+            std::string r(b);
+            if (s == "${pause_state}" && std::string("${pause_button}").empty()) r += " ||";
+            return r;
+          text_color: !lambda |-
+            return id(appliance_active_${key}) ? lv_color_hex(0xE7EBF0) : lv_color_hex(0x7F8B97);
+      - lvgl.widget.update:
+          id: appliance_card_${key}
+          state:
+            checked: !lambda 'return id(appliance_active_${key});'
+      - if:
+          condition:
+            lambda: 'return id(appliance_active_${key}) && !std::string("${pause_button}").empty();'
+          then:
+            - lvgl.widget.show: btn_pause_${key}
+          else:
+            - lvgl.widget.hide: btn_pause_${key}
+      - lvgl.label.update:
+          id: ico_pause_${key}
+          text: !lambda 'return std::string(id(ts_appliance_${key}).state == "${pause_state}" ? "\U000F040A" : "\U000F03E4");'
+
+lvgl:
+  pages:
+    - id: !extend page_appliances
+      widgets:
+        - button:
+            id: appliance_card_${key}
+            width: 224
+            height: 66
+            styles: st_btn
+            pressed:
+              bg_color: 0x1A212A
+            checkable: true
+            checked:
+              bg_color: 0x2A2112
+              border_color: 0xE9B04A
+              text_color: 0xE9B04A
+            widgets:
+              - label:
+                  text: "${icon}"
+                  text_font: mdi_appliance_${key}
+                  align: TOP_LEFT
+                  x: 2
+                  y: 14
+              - label:
+                  text: "${name}"
+                  text_font: mont_b14
+                  align: TOP_LEFT
+                  x: 44
+                  y: 10
+              - label:
+                  id: lbl_appliance_${key}
+                  text: "--"
+                  text_font: mont_b20
+                  text_color: 0x7F8B97
+                  align: TOP_LEFT
+                  x: 44
+                  y: 30
+              - button:
+                  id: btn_pause_${key}
+                  align: RIGHT_MID
+                  x: 0
+                  width: 34
+                  height: 34
+                  radius: 17
+                  bg_color: 0xE9B04A
+                  bg_opa: COVER
+                  border_width: 0
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0xB88A38
+                  hidden: true
+                  on_click:
+                    - if:
+                        condition:
+                          lambda: 'return id(ts_appliance_${key}).state == "${pause_state}";'
+                        then:
+                          - homeassistant.action:
+                              action: button.press
+                              data:
+                                entity_id: "${resume_button}"
+                        else:
+                          - homeassistant.action:
+                              action: button.press
+                              data:
+                                entity_id: "${pause_button}"
+                  widgets:
+                    - label:
+                        id: ico_pause_${key}
+                        text: "\U000F03E4"
+                        text_font: mdi_appliance_pause
+                        text_color: 0x1A1405
+                        align: CENTER

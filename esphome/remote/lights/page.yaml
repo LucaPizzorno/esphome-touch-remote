@@ -1,0 +1,128 @@
+# =====================================================================
+# LIGHTS PAGE - grid of on/off tiles + "All on" / "All off"
+# Add tiles with lights/light.yaml (one per light, as many as you like:
+# with more than 4 the grid scrolls). "All" controls every light added.
+#
+# Optional variables:
+#   title     page title                       (default: from the language file)
+#   nav_icon  icon in the bottom bar (MDI)     (default: light bulb)
+# =====================================================================
+
+defaults:
+  title: ${txt_title_lights}
+  nav_icon: "\U000F0335"
+
+globals:
+  - id: lights_all          # filled on boot by every light added
+    type: std::string
+    initial_value: '""'
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_nav_lights
+    size: 22
+    bpp: 4
+    glyphs: ["${nav_icon}"]
+
+script:
+  - id: !extend build_ui
+    then:
+      - lambda: |-
+          lv_obj_set_parent(id(nav_lights), id(nav_bar));
+          lv_obj_set_flex_grow(id(nav_lights), 1);
+  - id: !extend nav_refresh
+    then:
+      - lvgl.widget.update:
+          id: nav_lights
+          state:
+            checked: !lambda 'return id(active_page) == "lights";'
+
+lvgl:
+  top_layer:
+    widgets:
+      - button:
+          id: nav_lights
+          height: 46
+          styles: st_nav
+          pressed:
+            bg_color: 0x0E1116
+          checkable: true
+          checked:
+            bg_color: 0x0E1116
+            text_color: 0xE9B04A
+            border_color: 0xE9B04A
+            border_width: 2
+            border_side: TOP
+          on_click:
+            - lvgl.page.show: page_lights
+          widgets:
+            - label:
+                text: "${nav_icon}"
+                text_font: mdi_nav_lights
+                align: CENTER
+
+  pages:
+    - id: page_lights
+      bg_color: 0x0E1116
+      on_load:
+        - lambda: 'id(active_page) = "lights";'
+        - script.execute: nav_refresh
+      widgets:
+        - label:
+            text: "${title}"
+            text_font: mont_b20
+            x: 10
+            y: 6
+        # Grid: 2 tiles per row, scrolls with more than 4
+        - obj:
+            id: lights_grid
+            x: 8
+            y: 36
+            width: 224
+            height: 192
+            styles: st_container
+            scrollbar_mode: AUTO
+            layout:
+              type: flex
+              flex_flow: ROW_WRAP
+              pad_row: 8
+              pad_column: 8
+            widgets: []   # filled on boot
+        - button:
+            id: all_on
+            x: 8
+            y: 236
+            width: 108
+            height: 34
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_on
+                  data:
+                    entity_id: !lambda 'return id(lights_all);'
+            widgets:
+              - label:
+                  text: "${txt_all_on}"
+                  align: CENTER
+        - button:
+            id: all_off
+            x: 124
+            y: 236
+            width: 108
+            height: 34
+            styles: st_btn
+            pressed:
+              bg_color: 0x252E3A
+            on_click:
+              - homeassistant.action:
+                  action: light.turn_off
+                  data:
+                    entity_id: !lambda 'return id(lights_all);'
+            widgets:
+              - label:
+                  text: "${txt_all_off}"
+                  align: CENTER

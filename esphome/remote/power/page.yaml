@@ -1,0 +1,247 @@
+# =====================================================================
+# POWER PAGE - instant home power consumption with 4 coloured bars
+# (green, yellow, orange, red: each bar is a quarter of the maximum power)
+#
+# Required variables:
+#   power_sensor     power sensor in W                    (e.g. sensor.home_power)
+# Optional:
+#   max_power_w      your supply limit in W (bar scale)    (default: 3500)
+#   max_power_label  how to show it on screen              (default: 3.5 kW)
+#   title            page title                            (default: from the language file)
+#   subtitle         line below the title                  (default: from the language file)
+#   nav_icon         icon in the bottom bar (MDI)          (default: lightning bolt)
+# =====================================================================
+
+defaults:
+  max_power_w: "3500"
+  max_power_label: "3.5 kW"
+  title: ${txt_title_power}
+  subtitle: ${txt_power_subtitle}
+  nav_icon: "\U000F0241"
+
+sensor:
+  - platform: homeassistant
+    id: sn_power
+    entity_id: ${power_sensor}      # in W
+    internal: true
+    on_value:
+      then:
+        - script.execute: refresh_power
+
+font:
+  - file:
+      type: web
+      url: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: mdi_nav_power
+    size: 22
+    bpp: 4
+    glyphs: ["${nav_icon}"]
+
+script:
+  - id: !extend build_ui
+    then:
+      - lambda: |-
+          lv_obj_set_parent(id(nav_power), id(nav_bar));
+          lv_obj_set_flex_grow(id(nav_power), 1);
+  - id: !extend refresh_all
+    then:
+      - script.execute: refresh_power
+  - id: !extend nav_refresh
+    then:
+      - lvgl.widget.update:
+          id: nav_power
+          state:
+            checked: !lambda 'return id(active_page) == "power";'
+  # Power page: 4 bars, one per quarter of the maximum power
+  - id: refresh_power
+    then:
+      - lvgl.label.update:
+          id: lbl_power_val
+          text: !lambda |-
+            float w = id(sn_power).state;
+            if (std::isnan(w)) return std::string("--");
+            char b[24];
+            if (w >= 1000) snprintf(b, sizeof(b), "%.2f kW", w / 1000.0f);
+            else snprintf(b, sizeof(b), "%.0f W", w);
+            return std::string(b);
+          text_color: !lambda |-
+            float w = id(sn_power).state;
+            if (std::isnan(w)) return lv_color_hex(0x7F8B97);
+            if (w < ${max_power_w} * 0.25f) return lv_color_hex(0x4CAF50);
+            if (w < ${max_power_w} * 0.50f) return lv_color_hex(0xF2C94C);
+            if (w < ${max_power_w} * 0.75f) return lv_color_hex(0xF2994A);
+            return lv_color_hex(0xE5484D);
+      - lvgl.label.update:
+          id: lbl_power_pct
+          text: !lambda |-
+            float w = id(sn_power).state;
+            if (std::isnan(w)) return std::string("${txt_power_waiting}");
+            char b[40];
+            snprintf(b, sizeof(b), "%.0f%% ${txt_power_of} ${max_power_label}", w * 100.0f / ${max_power_w}.0f);
+            return std::string(b);
+      - lvgl.bar.update:
+          id: bar_c0
+          value: !lambda |-
+            float w = id(sn_power).state;
+            if (std::isnan(w)) return 0;
+            float v = (w - 0*(${max_power_w}.0f / 4.0f)) / (${max_power_w}.0f / 4.0f) * 100.0f;
+            return (int) (v < 0 ? 0 : (v > 100 ? 100 : v + 0.5f));
+      - lvgl.bar.update:
+          id: bar_c1
+          value: !lambda |-
+            float w = id(sn_power).state;
+            if (std::isnan(w)) return 0;
+            float v = (w - 1*(${max_power_w}.0f / 4.0f)) / (${max_power_w}.0f / 4.0f) * 100.0f;
+            return (int) (v < 0 ? 0 : (v > 100 ? 100 : v + 0.5f));
+      - lvgl.bar.update:
+          id: bar_c2
+          value: !lambda |-
+            float w = id(sn_power).state;
+            if (std::isnan(w)) return 0;
+            float v = (w - 2*(${max_power_w}.0f / 4.0f)) / (${max_power_w}.0f / 4.0f) * 100.0f;
+            return (int) (v < 0 ? 0 : (v > 100 ? 100 : v + 0.5f));
+      - lvgl.bar.update:
+          id: bar_c3
+          value: !lambda |-
+            float w = id(sn_power).state;
+            if (std::isnan(w)) return 0;
+            float v = (w - 3*(${max_power_w}.0f / 4.0f)) / (${max_power_w}.0f / 4.0f) * 100.0f;
+            return (int) (v < 0 ? 0 : (v > 100 ? 100 : v + 0.5f));
+
+lvgl:
+  top_layer:
+    widgets:
+      - button:
+          id: nav_power
+          height: 46
+          styles: st_nav
+          pressed:
+            bg_color: 0x0E1116
+          checkable: true
+          checked:
+            bg_color: 0x0E1116
+            text_color: 0xE9B04A
+            border_color: 0xE9B04A
+            border_width: 2
+            border_side: TOP
+          on_click:
+            - lvgl.page.show: page_power
+          widgets:
+            - label:
+                text: "${nav_icon}"
+                text_font: mdi_nav_power
+                align: CENTER
+
+  pages:
+    - id: page_power
+      bg_color: 0x0E1116
+      on_load:
+        - lambda: 'id(active_page) = "power";'
+        - script.execute: nav_refresh
+        - script.execute: refresh_power
+      widgets:
+        - label:
+            text: "${title}"
+            text_font: mont_b20
+            x: 10
+            y: 6
+        - label:
+            text: "${subtitle}"
+            text_font: montserrat_14
+            text_color: 0x7F8B97
+            x: 10
+            y: 40
+        - label:
+            id: lbl_power_val
+            text: "--"
+            text_font: montserrat_48
+            align: TOP_MID
+            y: 78
+        - label:
+            id: lbl_power_pct
+            text: "${txt_power_waiting}"
+            text_font: montserrat_14
+            text_color: 0x7F8B97
+            align: TOP_MID
+            y: 142
+        - bar:
+            id: bar_c0
+            x: 10
+            y: 186
+            width: 52
+            height: 20
+            min_value: 0
+            max_value: 100
+            value: 0
+            bg_color: 0x1F2630
+            bg_opa: COVER
+            border_width: 0
+            radius: 10
+            indicator:
+              bg_color: 0x4CAF50
+              bg_opa: COVER
+              radius: 10
+        - bar:
+            id: bar_c1
+            x: 66
+            y: 186
+            width: 52
+            height: 20
+            min_value: 0
+            max_value: 100
+            value: 0
+            bg_color: 0x1F2630
+            bg_opa: COVER
+            border_width: 0
+            radius: 10
+            indicator:
+              bg_color: 0xF2C94C
+              bg_opa: COVER
+              radius: 10
+        - bar:
+            id: bar_c2
+            x: 122
+            y: 186
+            width: 52
+            height: 20
+            min_value: 0
+            max_value: 100
+            value: 0
+            bg_color: 0x1F2630
+            bg_opa: COVER
+            border_width: 0
+            radius: 10
+            indicator:
+              bg_color: 0xF2994A
+              bg_opa: COVER
+              radius: 10
+        - bar:
+            id: bar_c3
+            x: 178
+            y: 186
+            width: 52
+            height: 20
+            min_value: 0
+            max_value: 100
+            value: 0
+            bg_color: 0x1F2630
+            bg_opa: COVER
+            border_width: 0
+            radius: 10
+            indicator:
+              bg_color: 0xE5484D
+              bg_opa: COVER
+              radius: 10
+        - label:
+            text: "0"
+            text_font: montserrat_14
+            text_color: 0x7F8B97
+            x: 10
+            y: 212
+        - label:
+            text: "${max_power_label}"
+            text_font: montserrat_14
+            text_color: 0x7F8B97
+            align: TOP_RIGHT
+            x: -10
+            y: 212
