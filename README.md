@@ -5,6 +5,15 @@ A battery-powered touch remote for the living room, built on a 2.8" ESP32-S3 dis
 It is **modular**: you choose which pages you want and how many lights, LED zones or appliances go on each one. The navigation bar at the bottom adapts by itself. On-screen texts are available in English and Italian.
 
 <!-- Add a photo here: ![Remote](images/remote.jpg) -->
+<img width="180" height="240" alt="20261028_162302-2" src="https://github.com/user-attachments/assets/acd8e7a4-eb03-4a3a-ad5c-5a364ab0eba8" />
+<img width="180" height="240" alt="20261028_162320-2" src="https://github.com/user-attachments/assets/3ac3dcfa-8067-47a4-aee4-f1fc239cf196" />
+<img width="180" height="240" alt="20261028_162316-2" src="https://github.com/user-attachments/assets/c0cea6c7-a9cb-4017-a2a6-e01fcb6cb811" />
+<img width="180" height="240" alt="20261028_162313-2" src="https://github.com/user-attachments/assets/2b3a50b0-b7c4-418d-acb3-19344ec75123" />
+<img width="180" height="240" alt="20261028_162309-2" src="https://github.com/user-attachments/assets/bcc7b389-2050-4ad4-b4cb-f7a0a09ba711" />
+<img width="180" height="240" alt="20261028_162445-2" src="https://github.com/user-attachments/assets/7c7094e3-9898-43d9-9bf6-9998d3fd2b82" />
+<img width="180" height="240" alt="20261028_162438-2" src="https://github.com/user-attachments/assets/f7d4115f-a86d-4ebe-8214-c950ab1a3406" />
+
+
 
 > **A note from the author**
 > I know very little about programming. This whole project (ESPHome configuration, interface and documentation) was created with the help of **Claude Opus**, Anthropic's AI model, through many conversations in which I explained what I wanted and tried the results on the real device.
@@ -41,7 +50,8 @@ esphome/
     ├── settings.yaml
     ├── lang/       en.yaml, it.yaml
     ├── lights/     page.yaml, light.yaml
-    ├── led/        page.yaml, zone.yaml
+    ├── led/        page.yaml, zone.yaml<img width="900" height="1200" alt="20261028_162438" src="https://github.com/user-attachments/assets/069d0c05-af5c-4787-afc7-98c18ca86612" />
+
     ├── tv/         apple_tv.yaml
     ├── appliances/ page.yaml, appliance.yaml
     └── power/      page.yaml
