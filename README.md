@@ -38,6 +38,7 @@ The battery indicator is always shown at the top right, with an estimate of whet
 - LiPo battery **102050 1000 mAh** (JST 1.25 connector) on the board's battery connector
 - *(optional)* **Qi** wireless charging receiver with USB-C output, connected to the board's USB port. The one I bought is roughly 76x46mm , please consider the dimension and edit the case file accordingly.
 - *(optional)* 3D-printed case: files in the [`case/`](case/) folder
+- New MakerWorld link, new remote shell: https://makerworld.com/it/models/3603757-remote-for-esp32-touch-display-homeassistant#profileId-4129666
 
 ## Structure
 
